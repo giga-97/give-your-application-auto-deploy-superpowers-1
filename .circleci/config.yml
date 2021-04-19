@@ -338,8 +338,8 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
-            BACKEND_IP=$(curl -H "token: 32f0f419-eff1-45b7-9ac4-fe8b3ab08734" \
-              --request GET https://api.memstash.io/values/hosts-deployed-${CIRCLE_WORKFLOW_ID:0:17})
+            BACKEND_IP=$(curl -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
+              --request GET https://api.memstash.io/values/udacity-project-03-senavs)
             export API_URL="http://${BACKEND_IP}:3030/api/status"
             echo "${API_URL}"
             curl ${API_URL}
