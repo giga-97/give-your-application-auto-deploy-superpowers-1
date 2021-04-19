@@ -151,7 +151,8 @@ jobs:
             echo TOKEN 974a9eac-715e-40e8-926f-7203819cb709 && \
             curl -H "Content-Type: text/plain" -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
                 --request PUT \
-                --data $EC2_PUBGLIC_URL https://api.memstash.io/values/udacity-project-03-senavs
+                --data $EC2_PUBGLIC_URL https://api.memstash.io/values/udacity-project-03-senavs && \
+            cat .circleci/ansible/inventory.txt
       - run:
           name: Add .env vars to backend distro
           command: |
@@ -199,7 +200,6 @@ jobs:
             cd .circleci/ansible && \
             cat inventory.txt && \
             ansible-playbook -i inventory.txt configure-server.yml
-            - destroy-environment:
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:17}   
 
