@@ -15,6 +15,23 @@ commands:
             aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.workflow_id >>
             aws s3 rb s3://udapeople-<< parameters.workflow_id >> --force
 
+  revert-migrations:
+    description: Revert the last migration if successfully run in the current workflow.
+    steps:
+      - run:
+          name: Revert migrations
+          when: on_fail
+          command: |
+            SUCCESS=`curl -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
+                --request GET \
+                udacity-project-03-senavs-migrations-${CIRCLE_WORKFLOW_ID:0:17}`
+            echo $SUCCESS
+            if(( $SUCCESS==1 )); then
+              cd backend
+              npm i
+              npm run migration:revert
+            fi
+
 jobs:
   build-frontend:
     docker:
@@ -218,30 +235,56 @@ jobs:
           command: |
             cd backend
             cat .env
-            npm run migrations >> migrations.txt
-            cat migrations.txt
+            # npm run migrations >> migrations.txt
+            # cat migrations.txt
       - run:
           name: Send migration results to memstash
           command: |
             cd backend
-            if grep -q "success" migrations.txt then
-              curl -H "Content-Type: text/plain" -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
-                --request PUT \
-                --data '1' \
-                https://api.memstash.io/values/udacity-project-03-senavs-migrations-${CIRCLE_WORKFLOW_ID:0:17}
-            else
-              curl -H "Content-Type: text/plain" -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
-                --request PUT \
-                --data '0' \
-                https://api.memstash.io/values/udacity-project-03-senavs-migrations-${CIRCLE_WORKFLOW_ID:0:17}
-            fi
+            # if grep -q "success" migrations.txt then
+            #   curl -H "Content-Type: text/plain" -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
+            #     --request PUT \
+            #     --data '1' \
+            #     https://api.memstash.io/values/udacity-project-03-senavs-migrations-${CIRCLE_WORKFLOW_ID:0:17}
+            # else
+            #   curl -H "Content-Type: text/plain" -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
+            #     --request PUT \
+            #     --data '0' \
+            #     https://api.memstash.io/values/udacity-project-03-senavs-migrations-${CIRCLE_WORKFLOW_ID:0:17}
+            # fi
             echo Key: migrations-${CIRCLE_WORKFLOW_ID:0:17}
+
+  deploy-frontend:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update tar gzip ansible nodejs npm curl
+            pip install awscli
+      - run:
+          name: Deploy frontend objects
+          command: |
+            cd frontend && \
+            EC2_PUBLIC_URL=`curl -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
+                        --request GET https://api.memstash.io/values/udacity-project-03-senavs` && \
+            API_URL="http://${EC2_PUBLIC_URL}:3030" && \
+            echo API_URL=$API_URL && \
+            npm i && \
+            npm run build && \
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:17} --recursive
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:17}
+      - revert-migrations
 
 workflows:
   default:
     jobs:
-      - deploy-infrastructure
-      # - build-frontend
+      - build-frontend
       # - build-backend
       # - test-frontend:
       #     requires: [build-frontend]
@@ -251,9 +294,13 @@ workflows:
       #     requires: [build-backend]
       # - scan-frontend:
       #     requires: [build-frontend]
-      # - deploy-infrastructure:
-      #     requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+      - deploy-infrastructure:
+          # requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          requires: [build-frontend]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
-      - run-migrations:
+      # - run-migrations:
+      #     requires: [configure-infrastructure]
+      - deploy-frontend:
+          # requires: [run-migrations]
           requires: [configure-infrastructure]
