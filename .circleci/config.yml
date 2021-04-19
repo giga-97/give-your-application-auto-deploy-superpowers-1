@@ -24,7 +24,7 @@ commands:
           command: |
             SUCCESS=`curl -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
                 --request GET \
-                udacity-project-03-senavs-migrations-${CIRCLE_WORKFLOW_ID:0:17}`
+                https://api.memstash.io/values/udacity-project-03-senavs-migrations
             echo $SUCCESS
             if(( $SUCCESS==1 )); then
               cd backend
@@ -243,18 +243,18 @@ jobs:
             curl -H "Content-Type: text/plain" -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
                 --request PUT \
                 --data '0' \
-                https://api.memstash.io/values/udacity-project-03-senavs-migrations-${CIRCLE_WORKFLOW_ID:0:17}
+                https://api.memstash.io/values/udacity-project-03-senavs-migrations
             # cd backend
             # if grep -q "success" migrations.txt then
             #   curl -H "Content-Type: text/plain" -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
             #     --request PUT \
             #     --data '1' \
-            #     https://api.memstash.io/values/udacity-project-03-senavs-migrations-${CIRCLE_WORKFLOW_ID:0:17}
+            #     https://api.memstash.io/values/udacity-project-03-senavs-migrations
             # else
             #   curl -H "Content-Type: text/plain" -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
             #     --request PUT \
             #     --data '0' \
-            #     https://api.memstash.io/values/udacity-project-03-senavs-migrations-${CIRCLE_WORKFLOW_ID:0:17}
+            #     https://api.memstash.io/values/udacity-project-03-senavs-migrations
             # fi
             # echo Key: migrations-${CIRCLE_WORKFLOW_ID:0:17}
       - destroy-environment:
