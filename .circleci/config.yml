@@ -172,7 +172,7 @@ jobs:
       - persist_to_workspace:
           root: ~/
           paths:
-            - project/.circleci/ansible/inventory.txt
+            - .circleci/ansible/inventory.txt
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:17}
 
@@ -184,7 +184,7 @@ jobs:
       - add_ssh_keys:
           fingerprints: ["de:00:2c:2d:2c:3a:24:46:45:3d:3f:e9:3b:f8:da:fd"]
       - attach_workspace:
-          at: ~/project
+          at: ~/
       - run:
           name: Install ansible.
           command: |
