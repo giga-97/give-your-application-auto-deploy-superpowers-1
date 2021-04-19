@@ -120,6 +120,10 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install tar
+          command: |
+            yum -y install tar gzip
+      - run:
           name: Ensure back-end infrastructure exists
           command: |
             aws cloudformation deploy \
@@ -171,10 +175,38 @@ jobs:
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:17}
 
+  configure-infrastructure:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["de:00:2c:2d:2c:3a:24:46:45:3d:3f:e9:3b:f8:da:fd"]
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Install ansible.
+          command: |
+            apk add --update ansible
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update tar gzip ansible nodejs npm curl && \
+            pip install awscli
+      - run:
+          name: Configure server
+          command: |
+            cd .circleci/ansible && \
+            cat inventory.txt && \
+            ansible-playbook -i inventory.txt configure-server.yml
+            - destroy-environment:
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:17}   
+
 workflows:
   default:
     jobs:
-    - deploy-infrastructure
+      - deploy-infrastructure
       # - build-frontend
       # - build-backend
       # - test-frontend:
@@ -186,4 +218,6 @@ workflows:
       # - scan-frontend:
       #     requires: [build-frontend]
       # - deploy-infrastructure:
-          # requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+      #     requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+      - configure-infrastructure
+          requires: [deploy-infrastructure]
