@@ -24,7 +24,7 @@ commands:
           command: |
             SUCCESS=`curl -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
                 --request GET \
-                https://api.memstash.io/values/udacity-project-03-senavs-migrations
+                https://api.memstash.io/values/udacity-project-03-senavs-migrations`
             echo $SUCCESS
             if(( $SUCCESS==1 )); then
               cd backend
@@ -321,10 +321,8 @@ jobs:
 
   smoke-test:
     docker:
-      # Lightweight Docker image
       - image: python:3.7-alpine3.11
     steps:
-      # Checkout code from git
       - checkout
       - run:
           name: Install dependencies
