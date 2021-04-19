@@ -235,23 +235,23 @@ jobs:
           command: |
             cd backend
             cat .env
-            # npm run migrations >> migrations.txt
-            # cat migrations.txt
+            npm run migrations >> migrations.txt
+            cat migrations.txt
       - run:
           name: Send migration results to memstash
           command: |
             cd backend
-            # if grep -q "success" migrations.txt then
-            #   curl -H "Content-Type: text/plain" -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
-            #     --request PUT \
-            #     --data '1' \
-            #     https://api.memstash.io/values/udacity-project-03-senavs-migrations-${CIRCLE_WORKFLOW_ID:0:17}
-            # else
-            #   curl -H "Content-Type: text/plain" -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
-            #     --request PUT \
-            #     --data '0' \
-            #     https://api.memstash.io/values/udacity-project-03-senavs-migrations-${CIRCLE_WORKFLOW_ID:0:17}
-            # fi
+            if grep -q "success" migrations.txt then
+              curl -H "Content-Type: text/plain" -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
+                --request PUT \
+                --data '1' \
+                https://api.memstash.io/values/udacity-project-03-senavs-migrations-${CIRCLE_WORKFLOW_ID:0:17}
+            else
+              curl -H "Content-Type: text/plain" -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
+                --request PUT \
+                --data '0' \
+                https://api.memstash.io/values/udacity-project-03-senavs-migrations-${CIRCLE_WORKFLOW_ID:0:17}
+            fi
             echo Key: migrations-${CIRCLE_WORKFLOW_ID:0:17}
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:17}
@@ -280,6 +280,76 @@ jobs:
             npm i && \
             npm run build && \
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:17} --recursive
+      - run:
+          name: Front-end s3 URL
+          command: |
+            echo s3://udapeople-${CIRCLE_WORKFLOW_ID:0:17}
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:17}
+      - revert-migrations
+
+  deploy-backend:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["de:00:2c:2d:2c:3a:24:46:45:3d:3f:e9:3b:f8:da:fd"]
+      - attach_workspace:
+          at: ~/
+      - restore_cache:
+          keys: [backend-build]
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update tar gzip ansible nodejs npm curl openssh-client
+            pip install awscli
+      - run:
+          name: Deploy backend
+          no_output_timeout: 30m
+          command: |
+            tar -C backend -czvf backend_artifact.tar.gz . && \
+            cd .circleci/ansible && \
+            ansible-playbook -i inventory.txt deploy-backend.yml
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:17}
+      - revert-migrations
+
+  smoke-test:
+    docker:
+      # Lightweight Docker image
+      - image: python:3.7-alpine3.11
+    steps:
+      # Checkout code from git
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --no-cache \
+              curl \
+              python3 \
+              py3-pip \
+              && pip3 install --upgrade pip \
+              && pip3 install \
+              awscli \
+              && rm -rf /var/cache/apk/*
+      - run:
+          name: Backend smoke test.
+          command: |
+            BACKEND_IP=$(curl -H "token: 32f0f419-eff1-45b7-9ac4-fe8b3ab08734" \
+              --request GET https://api.memstash.io/values/hosts-deployed-${CIRCLE_WORKFLOW_ID:0:4})
+            export API_URL="http://${BACKEND_IP}:3030/api/status"
+            echo "${API_URL}"
+            curl ${API_URL}
+      - run:
+          name: Frontend smoke test.
+          command: |
+            if curl -s  "http://udapeople-${CIRCLE_WORKFLOW_ID:0:17}.s3-website-us-east-1.amazonaws.com" | grep "Welcome"
+            then
+              return 0
+            else
+              return 1
+            fi
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:17}
       - revert-migrations
@@ -307,3 +377,6 @@ workflows:
       - deploy-frontend:
           # requires: [run-migrations]
           requires: [deploy-infrastructure]
+      # - deploy-backend:
+      #     requires: [deploy-infrastructure]
+      - smoke-test
