@@ -1,5 +1,20 @@
 version: 2.1
-            
+
+commands:
+  destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    parameters:
+      workflow_id:
+        type: "string"
+    steps:
+      - run:
+          name: Destroy environments
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.workflow_id >>
+            aws cloudformation delete-stack --stack-name -udapeoplefrontend-<< parameters.workflow_id >>
+            aws s3 rb s3://udapeople-<< parameters.workflow_id >> --force
+
 jobs:
   build-frontend:
     docker:
@@ -112,7 +127,6 @@ jobs:
               --tags project=project-03 \
               --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:17}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:17}"  
-              exit 1
       - run:
           name: Ensure front-end infrastructure exist
           command: |
@@ -121,17 +135,42 @@ jobs:
               --tags project=project-03 \
               --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:17}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:17}"  
-              exit 1
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-            # Your code here
-            exit 1
+            echo "[web]" > .circleci/ansible/inventory.txt && \
+            EC2_PUBGLIC_URL=`aws ec2 describe-instances \
+                --query 'Reservations[*].Instances[*].PublicIpAddress' \
+                --filters "Name=tag:project,Values=udapeople-${CIRCLE_WORKFLOW_ID:0:4}" \
+                --output text` && \
+            echo $EC2_PUBGLIC_URL >> .circleci/ansible/inventory.txt
+            echo URL $EC2_PUBGLIC_URL && \
+            echo TOKEN 974a9eac-715e-40e8-926f-7203819cb709 && \
+            curl -H "Content-Type: text/plain" -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
+                --request PUT \
+                --data $EC2_PUBGLIC_URL https://api.memstash.io/values/udacity-project-03-senavs
+      - run:
+          name: Add .env vars to backend distro
+          command: |
+            echo ENVIRONMENT=development > backend/.env
+            echo TYPEORM_CONNECTION=postgres >> backend/.env
+            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> backend/.env
+            echo TYPEORM_HOST=$TYPEORM_HOST >> backend/.env
+            echo TYPEORM_PORT=$TYPEORM_PORT >> backend/.env
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> backend/.env
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> backend/.env
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> backend/.env
+            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> "backend/.env"
+            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> "backend/.env"
+            echo NODE_ENV=development >> "backend/.env"
+      - restore_cache:
+          keys: [backend-build]
       - persist_to_workspace:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      # Here's where you will add some code to rollback on failure      
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:17}
 
 workflows:
   default:
