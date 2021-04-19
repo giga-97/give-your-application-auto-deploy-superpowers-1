@@ -253,6 +253,9 @@ jobs:
             #     https://api.memstash.io/values/udacity-project-03-senavs-migrations-${CIRCLE_WORKFLOW_ID:0:17}
             # fi
             echo Key: migrations-${CIRCLE_WORKFLOW_ID:0:17}
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:17}
+      - revert-migrations
 
   deploy-frontend:
     docker:
@@ -284,7 +287,8 @@ jobs:
 workflows:
   default:
     jobs:
-      - build-frontend
+      - deploy-infrastructure
+      # - build-frontend
       # - build-backend
       # - test-frontend:
       #     requires: [build-frontend]
@@ -294,13 +298,12 @@ workflows:
       #     requires: [build-backend]
       # - scan-frontend:
       #     requires: [build-frontend]
-      - deploy-infrastructure:
-          # requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-          requires: [build-frontend]
-      - configure-infrastructure:
-          requires: [deploy-infrastructure]
+      # - deploy-infrastructure:
+      #     requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+      # - configure-infrastructure:
+      #     requires: [deploy-infrastructure]
       # - run-migrations:
       #     requires: [configure-infrastructure]
       - deploy-frontend:
           # requires: [run-migrations]
-          requires: [configure-infrastructure]
+          requires: [deploy-infrastructure]
