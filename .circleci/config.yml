@@ -172,7 +172,7 @@ jobs:
       - persist_to_workspace:
           root: ~/
           paths:
-            - .circleci/ansible/inventory.txt
+            - project/.circleci/ansible/inventory.txt
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:17}
 
@@ -217,13 +217,13 @@ jobs:
           command: |
             cd backend
             cat .env
-            npm run migrations >> migrations-${CIRCLE_WORKFLOW_ID:0:17}.txt
-            cat migrations-${CIRCLE_WORKFLOW_ID:0:17}.txt
+            npm run migrations >> migrations.txt
+            cat migrations.txt
       - run:
           name: Send migration results to memstash
           command: |
             cd backend
-            if grep -q "success" migrations-${CIRCLE_WORKFLOW_ID}.txt then
+            if grep -q "success" migrations.txt then
               curl -H "Content-Type: text/plain" -H "token: 974a9eac-715e-40e8-926f-7203819cb709" \
                 --request PUT \
                 --data '1' \
