@@ -8,7 +8,7 @@ http://udapeople-620c4f87-ee39-4d8.s3-website-us-east-1.amazonaws.com
 http://d3cii07n4kz9ni.cloudfront.net/
 
 [URL04]
-ec2-18-212-237-114.compute-1.amazonaws.com
+http://ec2-34-205-147-164.compute-1.amazonaws.com:3030/
 
 [URL05]
-http://ec2-18-212-237-114.compute-1.amazonaws.com:9090/
+http://ec2-54-166-142-83.compute-1.amazonaws.com:9090/
