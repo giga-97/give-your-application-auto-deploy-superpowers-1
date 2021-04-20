@@ -2,13 +2,13 @@
 https://github.com/senavs/give-your-application-auto-deploy-superpowers
 
 [URL02]
-http://udapeople-620c4f87-ee39-4d8.s3-website-us-east-1.amazonaws.com
+http://udapeople-ba69dd6b-ef98-43e.s3-website-us-east-1.amazonaws.com/
 
 [URL03]
-http://d3cii07n4kz9ni.cloudfront.net/
+http://d27xuo5tsn2rg4.cloudfront.net/
 
 [URL04]
-http://ec2-34-205-147-164.compute-1.amazonaws.com:3030/
+http://ec2-54-84-11-101.compute-1.amazonaws.com:3030/
 
 [URL05]
-http://ec2-54-166-142-83.compute-1.amazonaws.com:9090/
+http://ec2-100-25-33-62.compute-1.amazonaws.com:9090/
